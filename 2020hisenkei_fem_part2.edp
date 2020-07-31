@@ -21,8 +21,8 @@ border c4(t=1,0){x=lengthofyoko*t;y=lengthoftate;label=4;};
 int n=20;
 int nn=100;
 mesh Th = buildmesh(c1(n)+c2(nn)+c3(n)+c4(nn));
-plot(Th,wait=true,ps="mesh.eps");
-
+plot(Th,ps="mesh.eps");
+//plot(Th,wait=true,ps="mesh.eps");
 fespace Vh(Th,[P1,P1]);
 Vh [u1, u2], [w1, w2], [v1, v2];
 
@@ -57,7 +57,8 @@ real res=w1[].linfty;
 u1[]-=w1[];
 
 mesh th1=movemesh(Th,[x+u1,y+u2]);
-plot(th1,wait=1,ps="heni-nl-elas-part2.eps");
+//plot(th1,wait=1,ps="heni-nl-elas-part2.eps");
+plot(th1,ps="heni-nl-elas-part2.eps");
 
 if(res<1e-10) break;
 }
@@ -82,4 +83,5 @@ Uh1 [pp11,pp12,pp22];
 
 
 int[int] Order = [1,1,1,1];
+//savevtk("2020hisenkei_fem_part2.vtu",Th,[u1,u2,0],pp11,pp12,pp22,dataname="displacement pp11 pp12 pp22");
 savevtk("2020hisenkei_fem_part2.vtu",Th,[u1,u2,0],pp11,pp12,pp22,dataname="displacement pp11 pp12 pp22",order=Order);
