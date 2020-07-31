@@ -62,7 +62,7 @@ plot(th1,wait=1,ps="heni-nl-elas-part2.eps");
 if(res<1e-10) break;
 }
 
-//mesh th1 = movemesh(Th,[x+u1, y+u2]);
+mesh th1 = movemesh(Th,[x+u1, y+u2]);
 
 //sigma_11,sigma_12,sigma_22
 //fespace Uh1(th1,[P1,P1,P1]);
