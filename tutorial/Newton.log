@@ -1,0 +1,129 @@
+-- FreeFem++ v4.6 (Fri, Apr 03, 2020  2:08:08 PM - git v4.6)
+ Load: lg_fem lg_mesh lg_mesh3 eigenvalue
+    1 : // FFCS: making a numerical value visible for regression tests
+    2 : real regtest;
+    3 :
+    4 : { // ---  a real non linear test ---
+    5 : mesh Th=square(10,10);  // mesh definition of $\Omega$
+    6 : Th = adaptmesh(Th,0.05,IsMetric=1,splitpbedge=1);
+    7 :
+    8 : //plot(Th,wait=1);
+    9 : //Th = adaptmesh(Th,0.1,IsMetric=1,splitpbedge=1);
+   10 : plot(fThreeglut ,(ffglut.exe): wafgPlatformInitialize: CreateDC failed, Screen size info may be incorrect
+This is quite likely caused by a bad '-display' parameterit
+=0);
+   11 : fespace Vh(Th,P1);      // finite element space
+   12 : fespace Ph(Th,P1dc);      // make optimization
+   13 :
+   14 : Vh b=1;  // to defined b
+   15 : // $ J(u) = 1/2 \int_\Omega f(|\nabla u|^2) - \int\Omega  u b $
+   16 : // $ f(x) = a*x + x-ln(1+x), \quad f'(x) = a+\frac{x}{1+x}, \quad f''(x) =  \frac{1}{(1+x)^2}$
+   17 : real a=0.001;
+   18 : func real f(real u) { return u*a+u-log(1+u); }
+   19 : func real df(real u) { return a+u/(1+u);}
+   20 : func real ddf(real u) { return 1/((1+u)*(1+u));}
+   21 :
+   22 : Vh u=0; //  the current value of the solution
+   23 : Ph alpha; // to store  $ (|\nabla u|^2)$
+   24 : Ph dfalpha; // to store  $f' (|\nabla u|^2)$
+   25 : Ph ddfalpha ; //to store = $2 f''( |\nabla u|^2) $  optimisation
+   26 :
+   27 : int iter=0;
+   28 :
+   29 :
+   30 : //   methode of  Newton Ralphson to solve dJ(u)=0;
+   31 : //    $$ u^{n+1} = u^n - (\frac{\partial dJ}{\partial u_i})^{-1}*dJ(u^n) $$
+   32 : //   ---------------------------------------------
+   33 :   // the variationnal form of evaluate  dJ
+   34 :   // --------------------------------------
+   35 :   //  dJ =  f'()*( dx(u)*dx(vh) + dy(u)*dy(vh)
+   36 :   varf vdJ(uh,vh) =  int2d(Th)( dfalpha*( dx(u)*dx(vh) + dy(u)*dy(vh) ) - b*vh)
+   37 :   + on(1,2,3,4, uh=0);
+   38 :   // the variationnal form of evaluate  ddJ
+   39 :   // hJ(uh,vh) =  f'()*( dx(uh)*dx(vh) + dy(uh)*dy(vh)
+   40 :   //            + f''()( dx(u)*dx(uh) + dy(u)*dy(uh) ) * (dx(u)*dx(vh) + dy(u)*dy(vh))
+   41 :   varf vhJ(uh,vh) = int2d(Th)( dfalpha*( dx(uh)*dx(vh) + dy(uh)*dy(vh) )
+   42 :    +  ddfalpha*( dx(u)*dx(vh) + dy(u)*dy(vh)  )*( dx(u)*dx(uh) + dy(u)*dy(uh) ) )
+   43 :    + on(1,2,3,4, uh=0);
+   44 :
+   45 :  // the newton algorithm
+   46 :   Vh v,w;
+   47 :   u=0;
+   48 :   for (int i=0;i<100;i++)
+   49 :    {
+   50 :     alpha = dx(u)*dx(u) + dy(u)*dy(u);// optimization
+   51 :     dfalpha = df( alpha ) ; // optimization
+   52 :     ddfalpha = 2*ddf(alpha ) ; // optimization
+   53 :     v[]= vdJ(0,Vh);
+   54 :     real res= v[]'*v[]; //'
+   55 :     cout << i <<  " residu^2 = " <<  res  << endl;
+   56 :     matrix H;
+   57 :     if( res< 1e-12) break;
+   58 :     H= vhJ(Vh,Vh,factorize=3,solver=LU);
+   59 :     w[]=H^-1*v[];
+   60 :     u[] -= w[];
+   61 :     plot (u,wait=0,cmm="solution with Newton Raphson");
+   62 :
+   63 :     // FFCS: regression tests
+   64 :     regtest=u[]'*u[]; //'
+   65 :    }
+   66 :
+   67 : load "medit"(load: loadLibary C:\Program Files (x86)\FreeFem++\\.\medit = 0) load "msh3"(load: loadLibary C:\ProðàÎgram Files (x86)\FreeFem++\\.\msh3 = 0)
+   68 :     meshS Th3= movemesh23(Th,transfo=[x,y,u*1.5]);
+   69 :     medit("N",Th3);
+   70 : }
+   71 :  sizestack + 1024 =4472  ( 3448 )
+ 
+  -- Square mesh : nb vertices  =121 ,  nb triangles = 200 ,  nb boundary edges 40
+  number of required edges : 0
+  -- adaptmesh Regulary:  Nb triangles 944 , h  min 0.0338057 , h max 0.0734457
+     area =  1 , M area = 400 , M area/( |Khat| nt) 0.97856
+     infiny-regularity:  min 0.474715  max 1.51433
+     anisomax  2.60162, beta max = 1.3147 min  0.819827
+  --  mesh:  Nb of Triangles =    944, Nb of Vertices 513
+0 residu^2 = 0.00200811
+  SkyLineMatrix: size pL/pU: 513 10591 10591 moy=20.6452
+1 residu^2 = 2008.03
+  SkyLineMatrix: size pL/pU: 513 10591 10591 moy=20.6452
+2 residu^2 = 0.00172146
+  SkyLineMatrix: size pL/pU: 513 10591 10591 moy=20.6452
+3 residu^2 = 0.255936
+  SkyLineMatrix: size pL/pU: 513 10591 10591 moy=20.6452
+4 residu^2 = 0.00178447
+  SkyLineMatrix: size pL/pU: 513 10591 10591 moy=20.6452
+5 residu^2 = 5.79948e-05
+  SkyLineMatrix: size pL/pU: 513 10591 10591 moy=20.6452
+6 residu^2 = 4.76486e-07
+  SkyLineMatrix: size pL/pU: 513 10591 10591 moy=20.6452
+7 residu^2 = 1.56518e-10
+  SkyLineMatrix: size pL/pU: 513 10591 10591 moy=20.6452
+8 residu^2 = 4.40254e-17
+version de medit ffmedit.exe -popen -filebin 1  N
+  -- Medit,  Release 3.0a (Nov. 30, 2007)
+     Copyright (c) LJLL, 1999-2007.
+     compiled:  Fri, Apr 03, 2020 2:43:22 PM (with ff++ 4.6).
+ 
+medit with binary version of popen : mesh(es)
+mesh_name= N
+freeglut (ffmedit.exe): fgPlatformInitialize: CreateDC failed, Screen size info may be incorrect
+This is quite likely caused by a bad '-display' parameter
+ Loading data file(s)
+End of mesh
+  Input seconds:     0.00
+ 
+ medit1()
+ 
+ Building scene(s)
+  Creating scene 1
+   Loading default options
+  Scene seconds:     0.45
+ 
+ Rendering scene(s)
+ 
+ Total running seconds:  5.89
+ Thank you for using Medit.
+times: compile 0.089s, execution 6.764s,  mpirank:0
+ ######## We forget of deleting   -57 Nb pointer,   0Bytes  ,  mpirank 0, memory leak =0
+ CodeAlloc : nb ptr  3832,  size :495048 mpirank: 0
+Ok: Normal End
+ try getConsole C:\Program Files (x86)\FreeFem++\examples\tutorial\Newton.edp
