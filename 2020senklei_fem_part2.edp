@@ -1,0 +1,62 @@
+load "iovtk"
+macro EL(u1,u2) [dx(u1),(dx(u2)+dy(u1)),dy(u2)] //
+
+real lengthoftate=2.0;
+real lengthofyoko=10.0;
+
+border c1(t=1,0){x=0.0;y=lengthoftate*t;label=1;};
+border c2(t=0,1){x=lengthofyoko*t;y=0.0;label=2;};
+border c3(t=0,1){x=lengthofyoko;y=lengthoftate*t;label=3;};
+border c4(t=1,0){x=lengthofyoko*t;y=lengthoftate;label=4;};
+
+int n=20;
+int nn=100;
+mesh Th = buildmesh(c1(n)+c2(nn)+c3(n)+c4(nn));
+plot(Th,wait=true,ps="mesh.eps");
+
+fespace Vh(Th,[P1,P1]);
+Vh [u1, u2], [v1, v2];
+
+real mu=1.0;
+real lambda=1.0;
+real gairyoku=-0.005;
+
+
+real a11= 2.0*mu+lambda;
+real a22= mu; 
+real a33= 2.0*mu+lambda;
+real a12= 0.0;
+real a13= lambda;
+real a23= 0.0;
+//symetric part
+real a21= a12;
+real a31= a13;
+real a32= a23;
+func A = [ [ a11,a12,a13],[ a21,a22,a23],[ a31,a32,a33] ];
+
+varf linearelas([u1,u2],[v1,v2],solver=sparsesolver)
+=int2d(Th)(EL(u1,u2)'*A*EL(v1,v2))
+ +int1d(Th,3)(gairyoku*v2)
+ +on(1,u1=0.0,u2=0.0);
+
+matrix  Alin=linearelas(Vh, Vh, solver=sparsesolver);
+real[int] rhslin=linearelas(0,Vh);
+
+u1[]=Alin^-1*rhslin;
+
+plot(Th,cmm="displacement",[u1,u2]);
+
+//sigma_11,sigma_12,sigma_22
+fespace Uh1(Th,[P1,P1,P1]);
+Uh1 [pp11,pp12,pp22];
+[pp11,pp12,pp22]=A*EL(u1,u2);
+
+//plot(pp11, cmm = "stress : P1_11", nbiso = 100,dim=3);
+//plot(pp12, cmm = "stress : P1_12", nbiso = 100,dim=3);
+//plot(pp22, cmm = "stress : P1_22", nbiso = 100,dim=3);
+
+//mesh th1 = movemesh(Th,[x+u1, y+u2]);
+//plot(th1,wait=1,ps="heni-elas-part2.eps");
+
+int[int] Order=[1,1,1,1];
+savevtk("2020senkei_fem_part2.vtu",Th,[u1,u2,0],pp11,pp12,pp22,dataname="displacement pp11 pp12 pp22",order=Order);
