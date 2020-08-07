@@ -1,4 +1,5 @@
 load "medit" 
+load "iovtk"
 include "cube.idp" 
 int[int]  Nxyz=[20,5,5]; 
 real [int,int]  Bxyz=[[0.,5.],[0.,1.],[0.,1.]]; 
