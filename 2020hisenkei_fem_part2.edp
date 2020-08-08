@@ -1,5 +1,5 @@
 load "iovtk"
-macro EL(u1,u2,u3) [dx(u1),(dx(u2)+dy(u1)),dy(u2)] //
+macro EL(u1,u2) [dx(u1),(dx(u2)+dy(u1)),dy(u2)] //
 macro ENL(u1,u2) [(dx(u1)*dx(u1)+dx(u2)*dx(u2))*0.5,(dx(u1)*dy(u1)+dx(u2)*dy(u2)),(dy(u1)*dy(u1)+dy(u2)*dy(u2))*0.5]//
 macro dENL(u1,u2,v1,v2) [(dx(u1)*dx(v1)+dx(u2)*dx(v2)),(dx(u1)*dy(v1)+dx(u2)*dy(v2)+dx(v1)*dy(u1)+dx(v2)*dy(u2)),(dy(u1)*dy(v1)+dy(u2)*dy(v2))]//
 
@@ -10,22 +10,23 @@ macro F2(u1,u2) (E(u1,u2)'*A*E(u1,u2))//
 macro dF2(u1,u2,v1,v2) (E(u1,u2)'*A*dE(u1,u2,v1,v2)*2.0)//
 macro ddF2(u1,u2,v1,v2,w1,w2) ((dE(u1,u2,v1,v2)'*A*dE(u1,u2,w1,w2))*2.0+(E(u1,u2)'*A*ddE(u1,u2,v1,v2,w1,w2))*2.0)//
 
-real lengthoftate=2.0;
-real lengthofyoko=10.0;
-
-border c1(t=0,1){x=-10*t;y=5-10*t;label=1;};
-border c2(t=0,1){x=-10+t*2;y=-5-2*t;label=2;};
-border c3(t=1,0){x=-8*t;y=1-8*t;label=3;};
-border c4(t=0,1){x=8*t;y=1-t*8;label=4;};
-border c5(t=0,1){x=8+2*t;y=-7+t*2;label=5;};
-border c6(t=0,1){x=10-t*10;y=-5+t*10;label=6;};
-
-//border c5(t=0,1){x=lengthofyoko*0.5;y=lengthoftate*t;label=5;};
-//border c6(t=1,0){x=lengthofyoko*t*0.5;y=lengthoftate;label=6;};
-
-int n=10;
-//int nn=20;
-mesh Th = buildmesh(c1(n*10)+c2(n*2)+c3(n*8)+c4(8*n)+c5(n*2)+c6(n*10));
+border(1,0,2*pi,40)
+begin
+x:=2*cos(t);
+y:=sin(t);
+end;
+mesh Th = buildmesh(800);
+//real lengthoftate=10.0;
+//real lengthofyoko=10.0;
+//
+//border c1(t=1,0){x=0.0;y=lengthoftate*t;label=1;};
+//border c2(t=0,1){x=lengthofyoko*t;y=0.0;label=2;};
+//border c3(t=0,1){x=lengthofyoko;y=lengthoftate*t;label=3;};
+//border c4(t=1,0){x=lengthofyoko*t;y=lengthoftate;label=4;};
+//
+//int n=100;
+//int nn=100;
+//mesh Th = buildmesh(c1(n)+c2(nn)+c3(n)+c4(nn));
 plot(Th,ps="mesh.eps");
 //plot(Th,wait=true,ps="mesh.eps");
 fespace Vh(Th,[P1,P1]);
@@ -33,7 +34,7 @@ Vh [u1, u2], [w1, w2], [v1, v2];
 
 real mu=1.0;
 real lambda=1.0;
-real gairyoku=-0.01;
+real gairyoku=-1.0;
 
 real a11= 2.0*mu+lambda;
 real a22= mu; 
@@ -53,8 +54,9 @@ real errb=0.0;
 for(int i=0;i<10;i++){
  solve NonLin([w1,w2],[v1,v2],solver=LU)=
 int2d(Th)(ddF2(u1,u2,w1,w2,v1,v2))-int2d(Th)(dF2(u1,u2,v1,v2))
-+int1d(Th,4)(gairyoku*v1)
-+on(1,w1=0.0,w2=0.0)
++int1d(Th,4)(gairyoku*v2)
++int1d(Th,2)(gairyoku*v2*(-1))
+//+on(2,w1=0.0,w2=0.0)
 ;
 
 real res=w1[].linfty;
