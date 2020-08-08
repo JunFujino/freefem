@@ -10,12 +10,9 @@ macro F2(u1,u2) (E(u1,u2)'*A*E(u1,u2))//
 macro dF2(u1,u2,v1,v2) (E(u1,u2)'*A*dE(u1,u2,v1,v2)*2.0)//
 macro ddF2(u1,u2,v1,v2,w1,w2) ((dE(u1,u2,v1,v2)'*A*dE(u1,u2,w1,w2))*2.0+(E(u1,u2)'*A*ddE(u1,u2,v1,v2,w1,w2))*2.0)//
 
-border(1,0,2*pi,40)
-begin
-x:=2*cos(t);
-y:=sin(t);
-end;
-mesh Th = buildmesh(800);
+border a(t=0,2*pi){x =cos(t); y = sin(t);label=1;};
+mesh th = buildmesh(a(20));
+mesh Th = adaptmesh (th,exp(x)/(0.01+y^2));
 //real lengthoftate=10.0;
 //real lengthofyoko=10.0;
 //
@@ -54,9 +51,9 @@ real errb=0.0;
 for(int i=0;i<10;i++){
  solve NonLin([w1,w2],[v1,v2],solver=LU)=
 int2d(Th)(ddF2(u1,u2,w1,w2,v1,v2))-int2d(Th)(dF2(u1,u2,v1,v2))
-+int1d(Th,4)(gairyoku*v2)
-+int1d(Th,2)(gairyoku*v2*(-1))
-//+on(2,w1=0.0,w2=0.0)
++int1d(Th)(gairyoku*v2)
+//+int1d(Th,2)(gairyoku*v2*(-1))
+//+on(,w1=0.0,w2=0.0)
 ;
 
 real res=w1[].linfty;
