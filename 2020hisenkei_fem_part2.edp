@@ -1,3 +1,6 @@
+//  ■   問題設定    ■
+//
+//
 load "iovtk"
 macro EL(u1,u2) [dx(u1),(dx(u2)+dy(u1)),dy(u2)] //
 macro ENL(u1,u2) [(dx(u1)*dx(u1)+dx(u2)*dx(u2))*0.5,(dx(u1)*dy(u1)+dx(u2)*dy(u2)),(dy(u1)*dy(u1)+dy(u2)*dy(u2))*0.5]//
