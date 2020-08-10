@@ -189,4 +189,6 @@ for( i=0;i<10;i++) {
     plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true); 
     cout << "DOF in fluid = " << tfh.nv << endl;
 }
+
+plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true); 
 cout << " max displacement " << uu1[].linfty << endl;
