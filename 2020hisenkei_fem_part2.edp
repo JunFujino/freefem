@@ -57,7 +57,7 @@ real res=w1[].linfty;
 u1[]-=w1[];
 
 mesh th1=movemesh(Th,[x+u1,y+u2]);
-plot(th1,wait=1,ps="heni-nl-elas-part2.eps");
+plot(th1,ps="heni-nl-elas-part2.eps");
 
 if(res<1e-10) break;
 }
