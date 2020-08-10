@@ -44,7 +44,7 @@ matrix AN = varnavier(Vh, Vh, solver=sparsesolver); // in the reference domain
     uu1[] = AN^-1 * ffn; // u1[] is a pointer to vector valued [u1,u2,p]
 }
 mesh tsh1 = movemesh(tsh, [x+uu1, y+uu2]); 
-plot(tsh1,wait=true);
+//plot(tsh1,wait=true);
 cout << " max displacement = " << uu2[].linfty << endl;
 // Stokes on square  b,e,f,g  driven cavity on left side g
 int topcavity = 3; 
@@ -55,7 +55,7 @@ border h(t=0,10) { x=t + uu1(t,0); y=uu2(t,0);
                    label=topcavity;}; // top of cavity with deformation
             
 mesh tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true); 
-plot(tsh1,tfh,wait=true);
+//plot(tsh1,tfh,wait=true);
 int nmb = 0;
 
 int[int] idxf1(tfh.nv), idxf2(tfh.nv); 
@@ -67,7 +67,7 @@ for( i=0;i<10;i++) {
     fespace XMh(tfh,[P2,P2,P1]);
     fespace Mh(tfh,P1);
     { // construct correspondence between fluid and structure DOF on the interface
-        plot(tsh1,tfh,wait=true); 
+        //plot(tsh1,tfh,wait=true); 
         int nmbf1 = 0, nmbf2 = 0; 
         int nmbs1 = 0, nmbs2 = 0; nmb = 0;
         XMh [uf1, uf2, pf];
@@ -136,7 +136,7 @@ for( i=0;i<10;i++) {
         cout << "DOF on the interface = " << nmb << endl; 
     }
     XMh [u1,u2,p], [v1, v2, q];
-        Mh ss, rr;
+    Mh ss, rr;
     varf varstokes([u1,u2,p],[v1,v2,q])=
         int2d(tfh)(2.0 * epsilon(u1,u2)'*epsilon(v1,v2) //’
                 -p*dx(v1)-p*dy(v2)+q*dx(u1)+q*dy(u2)+1.e-6*p*q) 
@@ -163,7 +163,7 @@ for( i=0;i<10;i++) {
         int2d(tfh)( dx(ss)*dx(rr) + dy(ss)*dy(rr)) 
         + int2d(tfh)( rr*(dy(u1)-dx(u2)))
         + on(1,2,3,4,ss=0.0);
-    plot(ss,wait=true,value=true,coef=0.1,cmm="[u1,u2],p");
+    //plot(ss,wait=true,value=true,coef=0.1,cmm="[u1,u2],p");
 
     Vh [uu01,uu02] =[uu1,uu2];
     varf extnavier([uu1,uu2],[vv1,vv2])= 
@@ -177,18 +177,19 @@ for( i=0;i<10;i++) {
 
     cout << " max displacement " << uu1[].linfty << endl;
 
-    plot([uu1,uu2],wait=true);
+    //plot([uu1,uu2],wait=true);
     real err = sqrt(int2d(tsh)( (uu1-uu01)^2 + (uu2-uu02)^2 )); 
     cout << " ## Iteration = " << i << " Error L2 = " << err << endl; 
     if (err < 1.0e-4) {
         break; 
     }
     tsh1 = movemesh(tsh, [x+uu1, y+uu2]); 
-    plot(tsh1,wait=true);
+    //plot(tsh1,wait=true);
     tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true); 
-    plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true); 
+    //plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true); 
+    plot(tsh1,tfh, wait=true); 
+    plot(ss,[uu1,uu2], wait=true, value=true); 
     cout << "DOF in fluid = " << tfh.nv << endl;
 }
 
-plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true); 
 cout << " max displacement " << uu1[].linfty << endl;
