@@ -17,17 +17,17 @@ macro ddF2(u1,u2,v1,v2,w1,w2) ((dE(u1,u2,v1,v2)'*A*dE(u1,u2,w1,w2))*2.0+(E(u1,u2
 real lengthoftate=2.0;
 real lengthofyoko=8.0;
 
-border c1(t=1,0){x=0.0;y=lengthoftate*t;label=1;};
-border c2(t=0,1){x=lengthofyoko*t;y=0.0;label=2;};
-border c3(t=0,1){x=lengthofyoko;y=(-1)*lengthofyoko*t;label=3;};
-border c4(t=0,1){x=lengthofyoko+lengthoftate*t;y=lengthofyoko*(-1);label=4;};
-border c5(t=0,1){x=lengthofyoko+lengthoftate;y=lengthofyoko*(-1)+(lengthofyoko+lengthoftate)*t;label=5;};
-border c6(t=1,0){x=(lengthofyoko+lengthoftate)*t;y=lengthofyoko*(-1)+(lengthofyoko+lengthoftate);label=6;};
+//border c1(t=1,0){x=0.0;y=lengthoftate*t;label=1;};
+//border c2(t=0,1){x=lengthofyoko*t;y=0.0;label=2;};
+//border c3(t=0,1){x=lengthofyoko;y=(-1)*lengthofyoko*t;label=3;};
+//border c4(t=0,1){x=lengthofyoko+lengthoftate*t;y=lengthofyoko*(-1);label=4;};
+//border c5(t=0,1){x=lengthofyoko+lengthoftate;y=lengthofyoko*(-1)+(lengthofyoko+lengthoftate)*t;label=5;};
+//border c6(t=1,0){x=(lengthofyoko+lengthoftate)*t;y=lengthofyoko*(-1)+(lengthofyoko+lengthoftate);label=6;};
 
 int n=lengthoftate*10;
 int nn=lengthofyoko*10;
 int nnn=(lengthofyoko+lengthoftate)*10;
-mesh Th = buildmesh(c1(n)+c2(nn)+c3(nn)+c4(n)+c5(nnn)+c6(nnn));
+//mesh Th = buildmesh(c1(n)+c2(nn)+c3(nn)+c4(n)+c5(nnn)+c6(nnn));
 plot(Th,wait=true,ps="mesh.eps");
 
 fespace Vh(Th,[P1,P1]);
