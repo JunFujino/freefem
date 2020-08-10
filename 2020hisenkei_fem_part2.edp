@@ -1,6 +1,7 @@
+//#################################################################################################
 //  ■   問題設定    ■
-//
-//
+//  『の形に外力を加える．
+//#################################################################################################
 load "iovtk"
 macro EL(u1,u2) [dx(u1),(dx(u2)+dy(u1)),dy(u2)] //
 macro ENL(u1,u2) [(dx(u1)*dx(u1)+dx(u2)*dx(u2))*0.5,(dx(u1)*dy(u1)+dx(u2)*dy(u2)),(dy(u1)*dy(u1)+dy(u2)*dy(u2))*0.5]//
@@ -14,16 +15,19 @@ macro dF2(u1,u2,v1,v2) (E(u1,u2)'*A*dE(u1,u2,v1,v2)*2.0)//
 macro ddF2(u1,u2,v1,v2,w1,w2) ((dE(u1,u2,v1,v2)'*A*dE(u1,u2,w1,w2))*2.0+(E(u1,u2)'*A*ddE(u1,u2,v1,v2,w1,w2))*2.0)//
 
 real lengthoftate=2.0;
-real lengthofyoko=10.0;
+real lengthofyoko=8.0;
 
 border c1(t=1,0){x=0.0;y=lengthoftate*t;label=1;};
 border c2(t=0,1){x=lengthofyoko*t;y=0.0;label=2;};
-border c3(t=0,1){x=lengthofyoko;y=lengthoftate*t;label=3;};
-border c4(t=1,0){x=lengthofyoko*t;y=lengthoftate;label=4;};
+border c3(t=0,1){x=lengthofyoko;y=(-1)*lengthofyoko*t;label=3;};
+border c4(t=0,1){x=lengthofyoko+lengthoftate*t;y=lengthofyoko*(-1);label=4;};
+border c5(t=0,1){x=lengthofyoko+lengthoftate;y=lengthofyoko*(-1)+(lengthofyoko+lengthoftate)*t;label=5;};
+border c6(t=1,0){x=(lengthofyoko+lengthoftate)*t;y=lengthofyoko*(-1)+(lengthofyoko+lengthoftate);label=6;};
 
-int n=20;
-int nn=100;
-mesh Th = buildmesh(c1(n)+c2(nn)+c3(n)+c4(nn));
+int n=lengthoftate*10;
+int nn=lengthofyoko*10;
+int nnn=(lengthofyoko+lengthoftate)*10;
+mesh Th = buildmesh(c1(n)+c2(nn)+c3(nn)+c4(n)+c5(nnn)+c6(nnn));
 plot(Th,wait=true,ps="mesh.eps");
 
 fespace Vh(Th,[P1,P1]);
@@ -31,7 +35,7 @@ Vh [u1, u2], [w1, w2], [v1, v2];
 
 real mu=1.0;
 real lambda=1.0;
-real gairyoku=-0.005;
+real gairyoku=-0.001;
 
 real a11= 2.0*mu+lambda;
 real a22= mu; 
@@ -51,7 +55,7 @@ real errb=0.0;
 for(int i=0;i<10;i++){
  solve NonLin([w1,w2],[v1,v2],solver=LU)=
 int2d(Th)(ddF2(u1,u2,w1,w2,v1,v2))-int2d(Th)(dF2(u1,u2,v1,v2))
-+int1d(Th,3)(gairyoku*v2)
++int1d(Th,4)(gairyoku*v1)
 +on(1,w1=0.0,w2=0.0);
 ;
 
