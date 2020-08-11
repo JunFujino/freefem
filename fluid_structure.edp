@@ -1,4 +1,8 @@
-
+//#################################################################################################
+//                                       ■   問題設定    ■
+//                          キャビティー流れのサイドが弾性体のときを考える.
+//#################################################################################################
+load "iovtk"
 func int add2set(int[int] &idx, int ii, int num) {
     bool flag = false;
     for (int i = 0; i < num; i++) {
@@ -187,8 +191,8 @@ for( i=0;i<10;i++) {
     //plot(tsh1,wait=true);
     tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true); 
     //plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true); 
-    plot(tsh1,tfh, wait=true); 
-    plot(ss,[uu1,uu2], wait=true, value=true, fill=true); 
+    plot(tsh1,tfh, wait=true, ps="mesh_fluid_structure.eps"); 
+    plot(ss,[uu1,uu2], wait=true, value=true, fill=true, ps="results_fluid_structure.eps"); 
     cout << "DOF in fluid = " << tfh.nv << endl;
 }
 
