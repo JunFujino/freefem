@@ -1,0 +1,129 @@
+// JSIAM 2018 tutorial                           Atsushi Suzuki, 3 Sep. 2018
+// algorithm 1b : direct computation of stress from FEM solution of the fluid
+// Fluid-structure interaction for a weighting beam sitting on a
+// square cavity filled with a fluid.
+
+real E = 21.5;
+real sigma = 0.29;
+real mu = E/(2*(1+sigma));
+real lambda = E*sigma/((1+sigma)*(1-2*sigma));
+real gravity = -0.05;
+real coef=0.2;
+
+int bottombeam = 2;
+border a(t=2,0)  { x=0; y=t ;label=1;};          //  left beam
+border b(t=0,10) { x=t; y=0 ;label=bottombeam;}; //  bottom of beam
+border c(t=0,2)  { x=10; y=t ;label=1;};         //  right beam
+border d(t=0,10) { x=10-t; y=2; label=3;};       //  top beam 
+mesh tsh = buildmesh( b(20)+c(5)+d(20)+a(5),fixedborder=true);
+fespace Vh(tsh,[P2,P2]);
+Vh [uu1,uu2], [vv1,vv2];
+
+cout << "lambda,mu,gravity ="<<lambda<< " " << mu << " " << gravity << endl;
+// deformation of a beam under its own weight 
+// definition of 2 macro :
+real sqrt2=sqrt(2.);
+macro epsilon(u1,u2)  [dx(u1),dy(u2),(dy(u1)+dx(u2))/sqrt2] // EOM
+macro div(u,v) ( dx(u)+dy(v) ) // EOM
+
+varf varnavier([uu1,uu2],[vv1,vv2])=
+       int2d(tsh)(lambda*div(uu1,uu2)*div(vv1,vv2)	
+  	          +2.*mu*(epsilon(uu1,uu2)'*epsilon(vv1,vv2)) )  //'
+     + on(1,uu1=0,uu2=0) ;
+
+matrix AN = varnavier(Vh, Vh, solver=sparsesolver); // in the reference domain
+
+{
+  varf extnavier([uu1,uu2],[vv1,vv2])=
+       int2d(tsh) (gravity*vv2)
+     + on(1,uu1=0,uu2=0);
+
+  real[int] ffn = extnavier(0, Vh);	// tgv is embedded in the weak form
+
+  uu1[] = AN^-1 * ffn; // u1[] is a pointer to vector valued [u1,u2,p]
+
+}
+
+mesh tsh1 = movemesh(tsh, [x + uu1, y+uu2]);  // move only in y direction
+plot(tsh1,wait=true);
+cout << " max displacement = " << uu2[].linfty << endl;
+
+// Stokes on square  b,e,f,g  driven cavity on left side g
+int topcavity = 3;
+border e(t=0,10) { x=t; y=-10; label= 1; };      //  bottom
+border f(t=0,10) { x=10; y=-10+t ; label= 1; };  //  right
+border g(t=0,10) { x=0; y=-t ;label= 2;};        //  left
+border h(t=0,10) { x=t + uu1(t,0); y=uu2(t,0);
+		   label=topcavity;};  //  top of cavity with deformation
+
+mesh tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true);
+		  
+plot(tsh1,tfh,wait=true);
+
+int i;
+for( i=0;i<10;i++) {    
+
+  fespace XMh(tfh,[P2,P2,P1]);
+  fespace Mh(tfh,P1);
+  XMh [u1,u2,p], [v1, v2, q];
+  Mh ss, rr;
+  
+  varf varstokes([u1,u2,p],[v1,v2,q])=
+      int2d(tfh)(2.0 * epsilon(u1,u2)'*epsilon(v1,v2) //'
+	       -p*dx(v1)-p*dy(v2)+q*dx(u1)+q*dy(u2)+1.e-6*p*q)
+     +on(2,u1=1)+on(1,3,u1=0)+on(1,2,3,u2=0);
+  
+  varf extstokes([u1,u2,p],[v1,v2,q])=
+        on(2,u2=(-y)*(10.+y)/25.0)+on(1,3,u2=0)+on(1,2,3,u1=0);
+  cout << " loop " << i << endl; 
+  
+  matrix AS = varstokes(XMh, XMh, solver=sparsesolver);
+  real[int] ffs = extstokes(0, XMh);	// tgv is embedded in the weak form
+   
+  u1[] = AS^-1 * ffs; // u1[] is a pointer to vector valued [u1,u2,p]
+  real psum = int2d(tfh)(p);
+  p[] -= psum / tfh.area;
+  
+  cout << "pressure max = " << p[].max << " " << p[].min << endl;
+    
+  solve streamlines(ss,rr,solver=sparsesolver) =
+    int2d(tfh)( dx(ss)*dx(rr) + dy(ss)*dy(rr))
+    +  int2d(tfh)( rr*(dy(u1)-dx(u2)))
+    +  on(1,2,3,4,ss=0.0);
+  plot(ss,wait=true,value=true,coef=0.1,cmm="[u1,u2],p");
+   
+  Vh [uu01,uu02] =[uu1,uu2];
+  fespace V1h(tsh,P1);
+  V1h sigma11,sigma22,sigma12,cof12,cof22;   
+  sigma11([x+uu1,y+uu2]) = (2*dx(u1)-p);
+  sigma22([x+uu1,y+uu2]) = (2*dy(u2)-p);
+  sigma12([x+uu1,y+uu2]) = (dx(u2)+dy(u1));
+  cof12([x, y]) = dy(uu1);
+  cof22([x, y]) = -(1.0 + dx(uu1));
+	      
+  varf extnavier([uu1,uu2],[vv1,vv2])=
+       int2d(tsh) (gravity*vv2)
+     + int1d(tsh,bottombeam)(coef*((sigma11*cof12+sigma12*cof22)*vv1+
+				   (sigma12*cof12+sigma22*cof22)*vv2))
+     + on(1,uu1=0,uu2=0);
+
+  real[int] ffn = extnavier(0, Vh);	// tgv is embedded in the weak form
+
+  uu1[] = AN^-1 * ffn; // u1[] is a pointer to vector valued [uu1,uu2]
+
+  cout << " max displacement " << uu1[].linfty << endl;
+  plot([uu1,uu2],wait=true);
+  real  err = sqrt(int2d(tsh)( (uu1-uu01)^2 + (uu2-uu02)^2 )); 
+  cout << " ## Iteration = " << i << " Error L2 = " << err << endl;
+  if (err < 1.0e-4) {
+   break;
+ }
+	       
+ tsh1 = movemesh(tsh, [x+uu1, y+uu2]);
+ plot(tsh1,wait=true);
+ tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true);
+ plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true);
+ cout << "DOF in fluid = " << tfh.nv << endl;
+
+}
+cout << " max displacement " << uu1[].linfty << endl;

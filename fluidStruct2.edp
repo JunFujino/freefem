@@ -1,0 +1,225 @@
+// JSIAM 2018 tutorial                           Atsushi Suzuki, 3 Sep. 2018
+// algorithm 2 : stress on the deformed boundary with surface integration
+// Fluid-structure interaction for a weighting beam sitting on a
+// square cavity filled with a fluid.
+
+func int add2set(int[int] &idx, int ii, int num)
+{
+  bool flag = false;
+  for (int i = 0; i < num; i++) {
+    if (idx[i] == ii) {
+      flag = true;
+      return num;
+    }
+  }
+  if (flag == false) {
+    idx[num] = ii;
+  }
+  return (num + 1);
+}
+		  
+real E = 21.5;
+real sigma = 0.29;
+real mu = E/(2*(1+sigma));
+real lambda = E*sigma/((1+sigma)*(1-2*sigma));
+real gravity = -0.05;
+real coef=0.2;
+
+int bottombeam = 2;
+border a(t=2,0)  { x=0; y=t ;label=1;};          //  left beam
+border b(t=0,10) { x=t; y=0 ;label=bottombeam;}; //  bottom of beam
+border c(t=0,2)  { x=10; y=t ;label=1;};         //  right beam
+border d(t=0,10) { x=10-t; y=2; label=3;};       //  top beam 
+mesh tsh = buildmesh( b(20)+c(5)+d(20)+a(5),fixedborder=true);
+fespace Vh(tsh,[P2,P2]);
+Vh [uu1,uu2], [vv1,vv2];
+
+cout << "lambda,mu,gravity ="<<lambda<< " " << mu << " " << gravity << endl;
+// deformation of a beam under its own weight 
+// definition of 2 macro :
+real sqrt2=sqrt(2.);
+macro epsilon(u1,u2)  [dx(u1),dy(u2),(dy(u1)+dx(u2))/sqrt2] // EOM
+macro div(u,v) ( dx(u)+dy(v) ) // EOM
+
+varf varnavier([uu1,uu2],[vv1,vv2])=
+       int2d(tsh)(lambda*div(uu1,uu2)*div(vv1,vv2)	
+  	          +2.*mu*(epsilon(uu1,uu2)'*epsilon(vv1,vv2)) )  //'
+     + on(1,uu1=0,uu2=0) ;
+
+matrix AN = varnavier(Vh, Vh, solver=sparsesolver); // in the reference domain
+
+{
+  varf extnavier([uu1,uu2],[vv1,vv2])=
+       int2d(tsh) (gravity*vv2)
+     + on(1,uu1=0,uu2=0);
+
+  real[int] ffn = extnavier(0, Vh);	// tgv is embedded in the weak form
+
+  uu1[] = AN^-1 * ffn; // u1[] is a pointer to vector valued [u1,u2,p]
+
+}
+
+mesh tsh1 = movemesh(tsh, [x+uu1, y+uu2]);
+plot(tsh1,wait=true);
+cout << " max displacement = " << uu2[].linfty << endl;
+
+// Stokes on square  b,e,f,g  driven cavity on left side g
+int topcavity = 3;
+border e(t=0,10) { x=t; y=-10; label= 1; };      //  bottom
+border f(t=0,10) { x=10; y=-10+t ; label= 1; };  //  right
+border g(t=0,10) { x=0; y=-t ;label= 2;};        //  left
+border h(t=0,10) { x=t + uu1(t,0); y=uu2(t,0);
+		   label=topcavity;};  //  top of cavity with deformation
+
+mesh tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true);
+		  
+plot(tsh1,tfh,wait=true);
+
+int nmb = 0;
+
+int[int] idxf1(tfh.nv), idxf2(tfh.nv);
+int[int] idxs1(tsh.nv), idxs2(tsh.nv);
+int[int] idxf(tfh.nv);
+int[int] idxs(tsh.nv);
+		  
+int i;
+for( i=0;i<10;i++) {    
+
+  fespace XMh(tfh,[P2,P2,P1]);
+  fespace Mh(tfh,P1);
+  { // construct correspondence between fluid and structure DOF on the interface
+    plot(tsh1,tfh,wait=true);
+    int nmbf1 = 0, nmbf2 = 0;
+    int nmbs1 = 0, nmbs2 = 0;
+    nmb = 0;
+    XMh [uf1, uf2, pf];
+    [uf1, uf2, pf] = [x, y, 0.0];
+    int[int,int] ip2(3,3);
+    ip2 = [[1,2,3], [2,0,4], [0,1,5]];
+    for (int k = 0; k < tfh.nbe; k++) {
+      if (tfh.be(k).label == topcavity) {       // top of the cavity
+	int kk = tfh.be(k).Element;
+	int ii0 = tfh.be(k).whoinElement;
+	
+	for (int i = 0; i < 3; i++) {
+	  int ii1 = XMh(kk, ip2(ii0, i));
+	  nmbf1 = add2set(idxf1, ii1, nmbf1);
+	  int ii2 = XMh(kk, ip2(ii0, i) + 6);
+	  nmbf2 = add2set(idxf2, ii2, nmbf2);
+	}
+      }
+    }
+    cout << "nmbf2= " << nmbf2 << endl;
+    Vh [us1, us2];
+    [us1, us2] = [x + uu1, y + uu2]; // mid points are moved by P2 data [uu, vv]
+    for (int k = 0; k < tsh.nbe; k++) {
+      if (tsh.be(k).label == bottombeam) {  // bottom of the beam
+	int kk = tsh.be(k).Element;
+	int ii0 = tsh.be(k).whoinElement;
+	real xx0 = us1[][Vh(kk, ip2(ii0, 0))];
+	real xx1 = us1[][Vh(kk, ip2(ii0, 1))];
+	us1[][Vh(kk, ip2(ii0, 2))] = (xx0 + xx1) / 2.0;     // mid point of P1
+	real yy0 = us2[][Vh(kk, ip2(ii0, 0) + 6)];
+	real yy1 = us2[][Vh(kk, ip2(ii0, 1) + 6)];
+	us2[][Vh(kk, ip2(ii0, 2) + 6)] = (yy0 + yy1) / 2.0; // mid point of P1
+
+	for (int i = 0; i < 3; i++) {
+	  int ii1 = Vh(kk, ip2(ii0, i));
+	  nmbs1 = add2set(idxs1, ii1, nmbs1);
+	  int ii2 = Vh(kk, ip2(ii0, i) + 6);
+	  nmbs2 = add2set(idxs2, ii2, nmbs2);
+	}
+      }
+    }
+    cout << "nmbs2= " << nmbs2 << endl;
+    for (int i = 0; i < nmbf2; i++) {
+      int ii1 = idxf1[i];
+      int ii2 = idxf2[i];
+      bool flag = false;
+      for (int j = 0; j < nmbs2; j++) {
+	int jj1 = idxs1[j];
+	int jj2 = idxs2[j];
+	if ((abs(uf1[][ii1] - us1[][jj1]) < 1.0e-6) &&
+	    (abs(uf2[][ii2] - us2[][jj2]) < 1.0e-6)) {
+	  idxf[nmb] = ii1;
+	  idxs[nmb] = jj1;
+	  nmb++;
+	  idxf[nmb] = ii2;
+	  idxs[nmb] = jj2;
+	  nmb++;
+	  flag = true;
+	  break;
+	}
+      }
+      if (flag == false) {
+	cout << ii1 << " " << ii2 << " " << uf1[][ii1] << " " << uf2[][ii2]
+	     << endl;
+      }
+    }
+    cout << "DOF on the interface = " << nmb << endl;
+  }
+
+  XMh [u1,u2,p], [v1, v2, q];
+  Mh ss, rr;
+  
+  varf varstokes([u1,u2,p],[v1,v2,q])=
+      int2d(tfh)(2.0 * epsilon(u1,u2)'*epsilon(v1,v2) //'
+	       -p*dx(v1)-p*dy(v2)+q*dx(u1)+q*dy(u2)+1.e-6*p*q)
+     +on(2,u1=1)+on(1,3,u1=0)+on(1,2,3,u2=0);
+
+  varf varstokesn([u1,u2,p],[v1,v2,q])=
+     int2d(tfh)(2.0 * epsilon(u1,u2)'*epsilon(v1,v2) //'
+	       -p*dx(v1)-p*dy(v2)+q*dx(u1)+q*dy(u2));
+
+  varf extstokes([u1,u2,p],[v1,v2,q])=
+        on(2,u2=(-y)*(10.+y)/25.0)+on(1,3,u2=0)+on(1,2,3,u1=0);
+  cout << " loop " << i << endl; 
+  
+  matrix AS = varstokes(XMh, XMh, solver=sparsesolver);
+  matrix ASN = varstokesn(XMh, XMh, solver=GMRES);  // without factorization
+  real[int] ffs = extstokes(0, XMh);	// tgv is embedded in the weak form
+   
+  u1[] = AS^-1 * ffs; // u1[] is a pointer to vector valued [u1,u2,p]
+  real psum = int2d(tfh)(p);
+  p[] -= psum / tfh.area;
+  
+  cout << "pressure max = " << p[].max << " " << p[].min << endl;
+   
+  ffs = ASN * u1[]; // discrete Dirichelt -> Neumann map
+  
+  solve streamlines(ss,rr,solver=sparsesolver) =
+    int2d(tfh)( dx(ss)*dx(rr) + dy(ss)*dy(rr))
+    +  int2d(tfh)( rr*(dy(u1)-dx(u2)))
+    +  on(1,2,3,4,ss=0.0);
+  plot(ss,wait=true,value=true,coef=0.1,cmm="[u1,u2],p");
+   
+  Vh [uu01,uu02] =[uu1,uu2];
+	      
+  varf extnavier([uu1,uu2],[vv1,vv2])=
+       int2d(tsh) (gravity*vv2)
+   + on(1,uu1=0,uu2=0);
+
+  real[int] ffn = extnavier(0, Vh);	// tgv is embedded in the weak form
+
+  for (int i = 0; i < nmb; i++) {
+     ffn[idxs[i]] -= coef * ffs[idxf[i]];
+  }
+   
+  uu1[] = AN^-1 * ffn; // u1[] is a pointer to vector valued [uu1,uu2]
+
+  cout << " max displacement " << uu1[].linfty << endl;
+  plot([uu1,uu2],wait=true);
+  real  err = sqrt(int2d(tsh)( (uu1-uu01)^2 + (uu2-uu02)^2 )); 
+  cout << " ## Iteration = " << i << " Error L2 = " << err << endl;
+  if (err < 1.0e-4) {
+   break;
+ }
+	       
+ tsh1 = movemesh(tsh, [x+uu1, y+uu2]);
+ plot(tsh1,wait=true);
+ tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true);
+ plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true);
+ cout << "DOF in fluid = " << tfh.nv << endl;
+
+}
+cout << " max displacement " << uu1[].linfty << endl;
