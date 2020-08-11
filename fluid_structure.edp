@@ -27,7 +27,7 @@ border a(t=2,0) { x=0; y=t ;label=1;}; // left beam
 border b(t=0,10) { x=t; y=0 ;label=bottombeam;}; // bottom of beam 
 border c(t=0,2) { x=10; y=t ;label=1;}; // right beam 
 border d(t=0,10) { x=10-t; y=2; label=3;}; // top beam
-mesh tsh = buildmesh( b(20)+c(5)+d(20)+a(5),fixedborder=true); 
+mesh tsh = buildmesh( b(100)+c(25)+d(100)+a(25),fixedborder=true); 
 fespace Vh(tsh,[P2,P2]);
 Vh [uu1,uu2], [vv1,vv2];
 cout << "lambda,mu,gravity ="<<lambda<< " " << mu << " " << gravity << endl; // deformation of a beam under its own weight
@@ -58,7 +58,7 @@ border g(t=0,10) { x=0; y=-t ;label= 2;}; // left
 border h(t=0,10) { x=t + uu1(t,0); y=uu2(t,0);
                    label=topcavity;}; // top of cavity with deformation
             
-mesh tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true); 
+mesh tfh = buildmesh(h(-100)+f(100)+e(100)+g(100),fixedborder=true); 
 //plot(tsh1,tfh,wait=true);
 int nmb = 0;
 
@@ -189,11 +189,15 @@ for( i=0;i<10;i++) {
     }
     tsh1 = movemesh(tsh, [x+uu1, y+uu2]); 
     //plot(tsh1,wait=true);
-    tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true); 
+    tfh = buildmesh(h(-100)+f(100)+e(100)+g(100),fixedborder=true); 
     //plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true); 
     plot(tsh1,tfh, wait=true, ps="mesh_fluid_structure.eps"); 
     plot(ss,[uu1,uu2], wait=true, value=true, fill=true, ps="results_fluid_structure.eps"); 
+    savevtk("cavity.vtk",tfh,ss,dataname="displacement");
     cout << "DOF in fluid = " << tfh.nv << endl;
 }
 
 cout << " max displacement " << uu1[].linfty << endl;
+
+//int[int] Order = [1,1];
+savevtk("structure.vtu",tsh1,[uu1,uu2],dataname="displacement");
