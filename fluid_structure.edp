@@ -188,7 +188,7 @@ for( i=0;i<10;i++) {
     tfh = buildmesh(h(-20)+f(20)+e(20)+g(20),fixedborder=true); 
     //plot(tsh1,tfh,cmm="mesh in fluid : " + tfh.nv, wait=true); 
     plot(tsh1,tfh, wait=true); 
-    plot(ss,[uu1,uu2], wait=true, value=true); 
+    plot(ss,[uu1,uu2], wait=true, value=true, fill=true); 
     cout << "DOF in fluid = " << tfh.nv << endl;
 }
 
