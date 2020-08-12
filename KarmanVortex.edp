@@ -9,7 +9,7 @@ border a4(t=12,0){ x=t; y=6; label=4;}
 border a5(t=0,-2*pi){ x=2+0.8*cos(t); y=3+0.8*sin(t); label=5;} // cylinder
 
 // triangle-based mesh
-int n=10;
+int n=2;
 mesh Th= buildmesh( a1(30*n)+a2(30*n)+a3(30*n)+a4(30*n)+a5(30*n));
 
 plot(Th, bb=[[0.0,0.0],[12.0,6.0]], wait=true, ps="mesh_fluid.eps");
