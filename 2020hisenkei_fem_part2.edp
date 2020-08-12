@@ -53,7 +53,7 @@ func A = [ [ a11,a12,a13],[ a21,a22,a23],[ a31,a32,a33] ];
 
 real errb=0.0;
 for(int i=0;i<10;i++){
- solve NonLin([w1,w2],[v1,v2],solver=LU)=
+solve NonLin([w1,w2],[v1,v2],solver=LU)=
 int2d(Th)(ddF2(u1,u2,w1,w2,v1,v2))-int2d(Th)(dF2(u1,u2,v1,v2))
 +int1d(Th,4)(gairyoku*v1)
 +on(1,w1=0.0,w2=0.0);
