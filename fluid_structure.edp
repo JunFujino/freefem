@@ -32,7 +32,7 @@ real E = 21.5;
 real sigma = 0.29;
 real mu = E/(2*(1+sigma));
 real lambda = E*sigma/((1+sigma)*(1-2*sigma)); 
-real gravity = -0.10;
+real gravity = -0.40;
 real coef=0.2;
 real sqrt2=sqrt(2.);
 int bottombeam = 2;
@@ -65,6 +65,7 @@ matrix AN = varnavier(Vh, Vh, solver=sparsesolver); // in the reference domain
     uu1[] = AN^-1 * ffn; // u1[] is a pointer to vector valued [u1,u2,p]
 }
 mesh tsh1 = movemesh(tsh, [x+uu1, y+uu2]); 
+savevtk("structure_initial.vtu",tsh1,[uu1,uu2],dataname="displacement");
 //plot(tsh1,wait=true);
 //#################################################################################################
 //  ★流体部分
